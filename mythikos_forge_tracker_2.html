@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mythikos Forge — Print Tracker</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--bg2:#eeecea;--bg3:#e3e1dc;
+  --surf:#ffffff;--surf2:#fafaf8;
+  --bdr:rgba(0,0,0,0.09);--bdr2:rgba(0,0,0,0.16);
+  --txt:#1a1917;--txt2:#6b6a66;--txt3:#a09f9b;
+  --grn:#1a9e6e;--grn-l:#e3f5ed;--grn-m:#86d9b5;--grn-d:#0a5c3e;
+  --blu:#2e7dd1;--blu-l:#e5f0fb;--blu-m:#93bff0;--blu-d:#0c3d7a;
+  --amb:#c07a12;--amb-l:#fdf0d8;--amb-m:#f5c46a;
+  --red:#c0321a;--red-l:#fdeae6;--red-m:#f0917a;
+  --rad:10px;--rad-sm:6px;
+  --sh:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.05);
+  --sh-md:0 4px 12px rgba(0,0,0,0.1),0 1px 3px rgba(0,0,0,0.06);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100vh}
+
+.hdr{background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:200;box-shadow:var(--sh)}
+.hdr-inner{max-width:1160px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:58px;gap:16px}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:32px;height:32px;background:var(--grn);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.hdr-title{font-size:15px;font-weight:700;color:var(--txt)}
+.hdr-sub{font-size:11px;color:var(--txt3);margin-top:1px}
+.tabs{display:flex;gap:2px;background:var(--bg2);border-radius:var(--rad);padding:3px;flex-shrink:0}
+.tab-btn{padding:7px 16px;border-radius:7px;border:none;background:transparent;color:var(--txt2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.on{background:var(--surf);color:var(--txt);box-shadow:var(--sh)}
+
+.main{max-width:1160px;margin:0 auto;padding:24px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:14px 16px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--bg3);border-radius:0 0 var(--rad) var(--rad)}
+.stat.grn::after{background:var(--grn)}
+.stat.blu::after{background:var(--blu)}
+.stat-lbl{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:500}
+.stat-val{font-size:26px;font-weight:800;color:var(--txt);line-height:1;letter-spacing:-.02em}
+.stat-val.sm{font-size:17px;padding-top:5px;font-weight:700}
+.stat-sub{font-size:11px;color:var(--txt3);margin-top:4px}
+
+.prog-wrap{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:14px 18px;margin-bottom:16px;box-shadow:var(--sh)}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-title{font-size:13px;font-weight:600}
+.prog-pct{font-size:13px;font-weight:700;color:var(--grn)}
+.prog-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--grn),#2ec991);border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.prog-meta{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.prog-item{font-size:11px;color:var(--txt2)}
+.prog-item strong{color:var(--txt);font-weight:600}
+
+.eod-bar{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:14px 18px;margin-bottom:16px;box-shadow:var(--sh);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.eod-info{flex:1;min-width:180px}
+.eod-title{font-size:13px;font-weight:600}
+.eod-sub{font-size:11px;color:var(--txt2);margin-top:2px}
+.eod-btn{padding:9px 20px;background:var(--grn);color:#fff;border:none;border-radius:var(--rad-sm);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.eod-btn:hover{background:var(--grn-d);transform:translateY(-1px);box-shadow:var(--sh-md)}
+.eod-status{font-size:12px;padding:6px 12px;border-radius:var(--rad-sm);flex-shrink:0;display:none}
+.eod-ok{background:var(--grn-l);color:var(--grn-d)}
+.eod-warn{background:var(--amb-l);color:var(--amb)}
+.eod-great{background:var(--blu-l);color:var(--blu-d)}
+
+.filter-bar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.fbtn{padding:6px 13px;border-radius:20px;border:1px solid var(--bdr2);background:var(--surf);color:var(--txt2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.fbtn:hover{border-color:var(--grn);color:var(--grn-d)}
+.fbtn.on{background:var(--grn);border-color:var(--grn);color:#fff}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+.month-hd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin:20px 0 8px;padding-left:2px}
+
+.blackout{border:1px solid var(--red-m);border-radius:var(--rad);padding:12px 16px;background:var(--red-l);margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.blackout-icon{font-size:18px;flex-shrink:0}
+.blackout-title{font-size:13px;font-weight:700;color:var(--red)}
+.blackout-sub{font-size:11px;color:#a02a14;margin-top:1px}
+
+/* DAY CARD */
+.day-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);margin-bottom:8px;box-shadow:var(--sh);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.day-card:hover{border-color:var(--bdr2);box-shadow:var(--sh-md)}
+.day-card.done{background:var(--surf2);opacity:.6}
+.day-card.done .day-date{text-decoration:line-through;color:var(--txt3)}
+.day-card.partial{border-color:var(--amb-m)}
+.day-hdr{display:flex;align-items:center;padding:12px 14px;gap:10px;cursor:pointer;user-select:none}
+.day-expand{font-size:11px;color:var(--txt3);transition:transform .2s;flex-shrink:0}
+.day-card.expanded .day-expand{transform:rotate(180deg)}
+.day-chk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--bdr2);background:var(--surf);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:transparent}
+.day-chk:hover{border-color:var(--grn);background:var(--grn-l)}
+.day-chk.on{background:var(--grn);border-color:var(--grn);color:#fff}
+.day-chk.on::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.day-chk.partial{background:var(--amb-l);border-color:var(--amb-m)}
+.day-date{font-weight:600;font-size:13px;flex:1}
+.day-phase{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;letter-spacing:.04em;text-transform:uppercase;flex-shrink:0}
+.ph-t1{background:var(--grn-l);color:var(--grn-d)}
+.ph-t2{background:var(--blu-l);color:var(--blu-d)}
+.ph-t3{background:var(--bg2);color:var(--txt2)}
+.ph-mx{background:var(--amb-l);color:var(--amb)}
+.day-progress{font-size:12px;color:var(--txt2);white-space:nowrap;flex-shrink:0}
+.day-progress.full{color:var(--grn);font-weight:600}
+.day-progress.partial{color:var(--amb);font-weight:600}
+
+/* COLLAPSED TAGS */
+.day-tags{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 10px}
+.dtag{font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid;display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.dtag .qty{font-weight:800}
+.dtag-t1{background:var(--grn-l);border-color:var(--grn-m);color:var(--grn-d)}
+.dtag-t2{background:var(--blu-l);border-color:var(--blu-m);color:var(--blu-d)}
+.dtag-t3{background:var(--bg2);border-color:var(--bdr2);color:var(--txt2)}
+.dtag-partial{border-style:dashed}
+
+/* EXPANDED DESIGN ROWS */
+.design-rows{padding:0 14px 12px;border-top:1px solid var(--bdr);display:none}
+.day-card.expanded .design-rows{display:block}
+.design-row{padding:9px 0;border-bottom:1px solid var(--bdr)}
+.design-row:last-child{border-bottom:none}
+.design-row-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.design-name{font-size:12px;font-weight:700;flex:1}
+.design-tier-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;flex-shrink:0}
+.dt1{background:var(--grn-l);color:var(--grn-d)}
+.dt2{background:var(--blu-l);color:var(--blu-d)}
+.dt3{background:var(--bg2);color:var(--txt2)}
+.design-prog{font-size:11px;color:var(--txt2);flex-shrink:0}
+.design-prog.done{color:var(--grn);font-weight:600}
+
+.qty-adj{display:flex;gap:3px;flex-shrink:0}
+.qty-btn{width:20px;height:20px;border-radius:5px;border:1px solid var(--bdr2);background:var(--surf);color:var(--txt2);font-size:13px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.qty-btn:hover{border-color:var(--grn);color:var(--grn-d);background:var(--grn-l)}
+
+/* INDIVIDUAL BALL CHECKBOXES */
+.ball-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.ball-chk{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bdr2);background:var(--surf);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:9px;color:transparent;font-weight:700}
+.ball-chk:hover{border-color:var(--grn);background:var(--grn-l)}
+.ball-chk.on{background:var(--grn);border-color:var(--grn);color:#fff}
+.ball-chk.on::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+
+.finish{border:1px solid var(--grn-m);border-radius:var(--rad);padding:14px 18px;background:var(--grn-l);margin-top:16px;display:flex;align-items:center;gap:14px}
+.finish-icon{font-size:22px;flex-shrink:0}
+.finish-title{font-size:14px;font-weight:700;color:var(--grn-d)}
+.finish-sub{font-size:12px;color:var(--grn);margin-top:2px}
+
+/* ASSEMBLY */
+.asm-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.asm-search{flex:1;min-width:200px;max-width:300px;padding:7px 14px;border-radius:20px;border:1px solid var(--bdr2);background:var(--surf);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s}
+.asm-search:focus{border-color:var(--grn);box-shadow:0 0 0 3px rgba(26,158,110,.1)}
+.asm-meta{font-size:12px;color:var(--txt2);margin-bottom:12px}
+.asm-empty{padding:48px;text-align:center;color:var(--txt3);font-size:14px;grid-column:1/-1}
+.asm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+
+/* ASSEMBLY CARD with individual ball checkboxes */
+.asm-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:13px 14px;box-shadow:var(--sh);transition:all .15s}
+.asm-card:hover{border-color:var(--bdr2);box-shadow:var(--sh-md)}
+.asm-card.asm-all-done{opacity:.45;background:var(--surf2)}
+.asm-card-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.asm-name{font-size:12px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asm-prog{font-size:11px;color:var(--txt2);flex-shrink:0}
+.asm-prog.done{color:var(--grn);font-weight:600}
+.asm-tier{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;flex-shrink:0}
+.at1{background:var(--grn-l);color:var(--grn-d)}
+.at2{background:var(--blu-l);color:var(--blu-d)}
+.at3{background:var(--bg2);color:var(--txt2)}
+.asm-balls{display:flex;flex-wrap:wrap;gap:4px}
+.asm-ball{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bdr2);background:var(--surf);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.asm-ball:hover{border-color:var(--grn);background:var(--grn-l)}
+.asm-ball.on{background:var(--grn);border-color:var(--grn)}
+.asm-ball.on::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.asm-ball.locked{opacity:.3;cursor:not-allowed;pointer-events:none}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.on{display:flex}
+.modal{background:var(--surf);border-radius:var(--rad);padding:24px;max-width:420px;width:100%;box-shadow:var(--sh-md)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.modal-body{font-size:13px;color:var(--txt2);margin-bottom:20px;line-height:1.6}
+.modal-body strong{color:var(--txt)}
+.shift-detail{background:var(--bg2);border-radius:var(--rad-sm);padding:10px 14px;margin-top:10px;font-size:12px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-btn{padding:9px 18px;border-radius:var(--rad-sm);border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.modal-btn.primary{background:var(--grn);color:#fff}
+.modal-btn.primary:hover{background:var(--grn-d)}
+.modal-btn.secondary{background:var(--bg2);color:var(--txt2)}
+.modal-btn.secondary:hover{background:var(--bg3);color:var(--txt)}
+
+.panel{display:none}
+.panel.on{display:block}
+
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.main{padding:14px}.tab-btn{padding:7px 11px;font-size:12px}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-brand">
+      <div class="hdr-logo">⚡</div>
+      <div>
+        <div class="hdr-title">Mythikos Forge — Print Tracker</div>
+        <div class="hdr-sub">Trading Card Con Phoenix · Oct 2026 · 194 designs · 996 balls · 9/day</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn on" onclick="showTab('print',this)">🖨 Print Schedule</button>
+      <button class="tab-btn" onclick="showTab('asm',this)">🔧 Assembly Queue</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="stats">
+    <div class="stat grn">
+      <div class="stat-lbl">Balls Printed</div>
+      <div class="stat-val" id="s-printed">0</div>
+      <div class="stat-sub">of 996 total</div>
+    </div>
+    <div class="stat grn">
+      <div class="stat-lbl">Print Days Done</div>
+      <div class="stat-val" id="s-days">0</div>
+      <div class="stat-sub">of 111 scheduled</div>
+    </div>
+    <div class="stat blu">
+      <div class="stat-lbl">In Assembly Queue</div>
+      <div class="stat-val" id="s-queue">0</div>
+      <div class="stat-sub">printed, not assembled</div>
+    </div>
+    <div class="stat blu">
+      <div class="stat-lbl">Assembled</div>
+      <div class="stat-val" id="s-asm">0</div>
+      <div class="stat-sub">of 996 balls</div>
+    </div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-row">
+      <div class="prog-title">Print Progress</div>
+      <div class="prog-pct" id="prog-pct">0%</div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-meta">
+      <div class="prog-item"><strong id="pm-printed">0</strong> / 996 balls printed</div>
+      <div class="prog-item"><strong id="pm-asm">0</strong> / 996 assembled</div>
+      <div class="prog-item">T1 done by <strong>Jul 27</strong> · T2 done by <strong>Sep 17</strong> · Finish <strong id="pm-finish">Oct 24</strong></div>
+    </div>
+  </div>
+
+  <!-- PRINT PANEL -->
+  <div class="panel on" id="panel-print">
+    <div class="eod-bar">
+      <div class="eod-info">
+        <div class="eod-title">End of Day Check-in</div>
+        <div class="eod-sub">Tap when you're done for the day. Compares what you checked off vs what was scheduled and shifts the calendar accordingly.</div>
+      </div>
+      <div id="eod-status" class="eod-status"></div>
+      <button class="eod-btn" onclick="endOfDay()">✅ End of Day</button>
+    </div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--grn)"></div>Tier 1 — done by Jul 27</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--blu)"></div>Tier 2 — done by Sep 17</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--bg3)"></div>Tier 3 — Sep 18–Oct 24</div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="fbtn on" onclick="setF('all',this)">All Days</button>
+      <button class="fbtn" onclick="setF('todo',this)">To Do</button>
+      <button class="fbtn" onclick="setF('done',this)">Done</button>
+      <button class="fbtn" onclick="setF('t1',this)">Tier 1</button>
+      <button class="fbtn" onclick="setF('t2',this)">Tier 2</button>
+      <button class="fbtn" onclick="setF('t3',this)">Tier 3</button>
+    </div>
+
+    <div id="cal"></div>
+
+    <div class="finish">
+      <div class="finish-icon">🎯</div>
+      <div>
+        <div class="finish-title">Base finish: Oct 24 — event is late October. All T1 &amp; T2 locked well before event week.</div>
+        <div class="finish-sub">Tier 3 runs Sept 18–Oct 24. If you fall behind, T3 is the safe tier to deprioritize.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSEMBLY PANEL -->
+  <div class="panel" id="panel-asm">
+    <div class="asm-controls">
+      <input class="asm-search" type="text" placeholder="Search design..." oninput="renderAsm()" id="asm-q">
+      <button class="fbtn on" onclick="setAF('all',this)">All</button>
+      <button class="fbtn" onclick="setAF('ready',this)">Ready to Assemble</button>
+      <button class="fbtn" onclick="setAF('partial',this)">In Progress</button>
+      <button class="fbtn" onclick="setAF('done',this)">Fully Assembled</button>
+      <button class="fbtn" onclick="setAF('t1',this)">Tier 1</button>
+      <button class="fbtn" onclick="setAF('t2',this)">Tier 2</button>
+    </div>
+    <div class="asm-meta" id="asm-meta"></div>
+    <div class="asm-grid" id="asm-grid"></div>
+  </div>
+</main>
+
+<!-- EOD MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" id="modal-confirm" onclick="confirmEod()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE_SCH = [{"date":"2026-06-09","designs":[{"name":"Charizard","qty":9,"tier":1}],"total_balls":9},{"date":"2026-06-10","designs":[{"name":"Charizard","qty":3,"tier":1},{"name":"Charizard (Mega X)","qty":6,"tier":1}],"total_balls":9},{"date":"2026-06-11","designs":[{"name":"Charizard (Mega X)","qty":6,"tier":1},{"name":"Charizard (Mega Y)","qty":3,"tier":1}],"total_balls":9},{"date":"2026-06-12","designs":[{"name":"Charizard (Mega Y)","qty":9,"tier":1}],"total_balls":9},{"date":"2026-06-13","designs":[{"name":"Pikachu","qty":9,"tier":1}],"total_balls":9},{"date":"2026-06-15","designs":[{"name":"Pikachu","qty":3,"tier":1},{"name":"Gengar (Tongue)","qty":6,"tier":1}],"total_balls":9},{"date":"2026-06-16","designs":[{"name":"Gengar (Tongue)","qty":6,"tier":1},{"name":"Eevee","qty":3,"tier":1}],"total_balls":9},{"date":"2026-06-17","designs":[{"name":"Eevee","qty":9,"tier":1}],"total_balls":9},{"date":"2026-06-18","designs":[{"name":"Mewtwo","qty":9,"tier":1}],"total_balls":9},{"date":"2026-06-19","designs":[{"name":"Mewtwo","qty":3,"tier":1},{"name":"Mimikyu","qty":6,"tier":1}],"total_balls":9},{"date":"2026-06-30","designs":[{"name":"Mimikyu","qty":6,"tier":1},{"name":"Bulbasaur","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-01","designs":[{"name":"Bulbasaur","qty":6,"tier":1},{"name":"Bulbasaur Halloween Ball","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-02","designs":[{"name":"Bulbasaur Halloween Ball","qty":6,"tier":1},{"name":"Charmander","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-03","designs":[{"name":"Charmander","qty":6,"tier":1},{"name":"Charmeleon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-04","designs":[{"name":"Charmeleon","qty":6,"tier":1},{"name":"Squirtle","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-06","designs":[{"name":"Squirtle","qty":6,"tier":1},{"name":"Gastly","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-07","designs":[{"name":"Gastly","qty":6,"tier":1},{"name":"Haunter","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-08","designs":[{"name":"Haunter","qty":6,"tier":1},{"name":"Vaporeon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-09","designs":[{"name":"Vaporeon","qty":6,"tier":1},{"name":"Jolteon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-10","designs":[{"name":"Jolteon","qty":6,"tier":1},{"name":"Flareon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-11","designs":[{"name":"Flareon","qty":6,"tier":1},{"name":"Mew","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-13","designs":[{"name":"Mew","qty":6,"tier":1},{"name":"Espeon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-14","designs":[{"name":"Espeon","qty":6,"tier":1},{"name":"Umbreon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-15","designs":[{"name":"Umbreon","qty":6,"tier":1},{"name":"Lugia","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-16","designs":[{"name":"Lugia","qty":6,"tier":1},{"name":"Rayquaza","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-17","designs":[{"name":"Rayquaza","qty":6,"tier":1},{"name":"Garchomp","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-18","designs":[{"name":"Garchomp","qty":6,"tier":1},{"name":"Lucario","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-20","designs":[{"name":"Lucario","qty":6,"tier":1},{"name":"Leafeon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-21","designs":[{"name":"Leafeon","qty":6,"tier":1},{"name":"Glaceon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-22","designs":[{"name":"Glaceon","qty":6,"tier":1},{"name":"Arceus","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-23","designs":[{"name":"Arceus","qty":6,"tier":1},{"name":"Greninja","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-24","designs":[{"name":"Greninja","qty":6,"tier":1},{"name":"Sylveon","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-25","designs":[{"name":"Sylveon","qty":6,"tier":1},{"name":"Dragapult","qty":3,"tier":1}],"total_balls":9},{"date":"2026-07-27","designs":[{"name":"Dragapult","qty":6,"tier":1},{"name":"Ivysaur","qty":3,"tier":2}],"total_balls":9},{"date":"2026-07-28","designs":[{"name":"Ivysaur","qty":3,"tier":2},{"name":"Venusaur","qty":6,"tier":2}],"total_balls":9},{"date":"2026-07-29","designs":[{"name":"Wartortle","qty":6,"tier":2},{"name":"Blastoise","qty":3,"tier":2}],"total_balls":9},{"date":"2026-07-30","designs":[{"name":"Blastoise","qty":3,"tier":2},{"name":"Blastoise (Mega)","qty":6,"tier":2}],"total_balls":9},{"date":"2026-07-31","designs":[{"name":"Pikachu Female","qty":6,"tier":2},{"name":"Raichu","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-01","designs":[{"name":"Raichu","qty":3,"tier":2},{"name":"Clefairy","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-03","designs":[{"name":"Vulpix","qty":6,"tier":2},{"name":"Vulpix (Alolan)","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-04","designs":[{"name":"Vulpix (Alolan)","qty":3,"tier":2},{"name":"Ninetales","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-05","designs":[{"name":"Jigglypuff","qty":6,"tier":2},{"name":"Wigglytuff","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-06","designs":[{"name":"Wigglytuff","qty":3,"tier":2},{"name":"Psyduck","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-07","designs":[{"name":"Arcanine","qty":6,"tier":2},{"name":"Alakazam","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-08","designs":[{"name":"Alakazam","qty":3,"tier":2},{"name":"Machamp","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-10","designs":[{"name":"Galarian Ponyta","qty":6,"tier":2},{"name":"Cubone","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-11","designs":[{"name":"Cubone","qty":3,"tier":2},{"name":"Marowak","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-12","designs":[{"name":"Magikarp","qty":6,"tier":2},{"name":"Gyarados","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-13","designs":[{"name":"Gyarados","qty":3,"tier":2},{"name":"Lapras","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-14","designs":[{"name":"Ditto","qty":6,"tier":2},{"name":"Snorlax (Zzz)","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-15","designs":[{"name":"Snorlax (Zzz)","qty":3,"tier":2},{"name":"Articuno","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-17","designs":[{"name":"Zapdos","qty":6,"tier":2},{"name":"Moltres","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-18","designs":[{"name":"Moltres","qty":3,"tier":2},{"name":"Dratini","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-19","designs":[{"name":"Dragonair","qty":6,"tier":2},{"name":"Dragonite","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-20","designs":[{"name":"Dragonite","qty":3,"tier":2},{"name":"Raikou","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-21","designs":[{"name":"Entei","qty":6,"tier":2},{"name":"Suicune","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-22","designs":[{"name":"Suicune","qty":3,"tier":2},{"name":"Tyranitar","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-24","designs":[{"name":"Ho-oh","qty":6,"tier":2},{"name":"Celebi","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-25","designs":[{"name":"Celebi","qty":3,"tier":2},{"name":"Blaziken","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-26","designs":[{"name":"Mudkip","qty":6,"tier":2},{"name":"Gardevoir","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-27","designs":[{"name":"Gardevoir","qty":3,"tier":2},{"name":"Milotic","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-28","designs":[{"name":"Absol","qty":6,"tier":2},{"name":"Salamence","qty":3,"tier":2}],"total_balls":9},{"date":"2026-08-29","designs":[{"name":"Salamence","qty":3,"tier":2},{"name":"Metagross","qty":6,"tier":2}],"total_balls":9},{"date":"2026-08-31","designs":[{"name":"Latias","qty":6,"tier":2},{"name":"Latios","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-01","designs":[{"name":"Latios","qty":3,"tier":2},{"name":"Kyogre","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-02","designs":[{"name":"Groudon","qty":6,"tier":2},{"name":"Jirachi","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-03","designs":[{"name":"Jirachi","qty":3,"tier":2},{"name":"Deoxys Normal","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-04","designs":[{"name":"Piplup","qty":6,"tier":2},{"name":"Bidoof","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-05","designs":[{"name":"Bidoof","qty":3,"tier":2},{"name":"Luxray","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-07","designs":[{"name":"Lucario (Mega)","qty":6,"tier":2},{"name":"Dialga","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-08","designs":[{"name":"Dialga","qty":3,"tier":2},{"name":"Palkia","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-09","designs":[{"name":"Giratina","qty":6,"tier":2},{"name":"Darkrai","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-10","designs":[{"name":"Darkrai","qty":3,"tier":2},{"name":"Zorua","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-11","designs":[{"name":"Zoroark","qty":6,"tier":2},{"name":"Chandelure","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-12","designs":[{"name":"Chandelure","qty":3,"tier":2},{"name":"Reshiram","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-14","designs":[{"name":"Zekrom","qty":6,"tier":2},{"name":"Ash Greninja","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-15","designs":[{"name":"Ash Greninja","qty":3,"tier":2},{"name":"Sprigatito","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-16","designs":[{"name":"Ceruledge","qty":6,"tier":2},{"name":"Tinkaton","qty":3,"tier":2}],"total_balls":9},{"date":"2026-09-17","designs":[{"name":"Tinkaton","qty":3,"tier":2},{"name":"Annihilape","qty":6,"tier":2}],"total_balls":9},{"date":"2026-09-18","designs":[{"name":"Caterpie","qty":3,"tier":3},{"name":"Metapod","qty":3,"tier":3},{"name":"Butterfree","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-19","designs":[{"name":"Weedle","qty":3,"tier":3},{"name":"Kakuna","qty":3,"tier":3},{"name":"Beedrill","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-21","designs":[{"name":"Pidgey","qty":3,"tier":3},{"name":"Pidgeotto","qty":3,"tier":3},{"name":"Pidgeot","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-22","designs":[{"name":"Rattata","qty":3,"tier":3},{"name":"Raticate","qty":3,"tier":3},{"name":"Spearow","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-23","designs":[{"name":"Fearow","qty":3,"tier":3},{"name":"Ekans","qty":3,"tier":3},{"name":"Arbok","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-24","designs":[{"name":"Sandshrew","qty":3,"tier":3},{"name":"Sandslash","qty":3,"tier":3},{"name":"Nidoran\u2640","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-25","designs":[{"name":"Nidorina","qty":3,"tier":3},{"name":"Nidoqueen","qty":3,"tier":3},{"name":"Nidoran\u2642","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-26","designs":[{"name":"Nidorino","qty":3,"tier":3},{"name":"Nidoking","qty":3,"tier":3},{"name":"Clefable","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-28","designs":[{"name":"Zubat","qty":3,"tier":3},{"name":"Golbat","qty":3,"tier":3},{"name":"Oddish","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-29","designs":[{"name":"Gloom","qty":3,"tier":3},{"name":"Vileplume","qty":3,"tier":3},{"name":"Paras","qty":3,"tier":3}],"total_balls":9},{"date":"2026-09-30","designs":[{"name":"Parasect","qty":3,"tier":3},{"name":"Venonat","qty":3,"tier":3},{"name":"Venomoth","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-01","designs":[{"name":"Diglett","qty":3,"tier":3},{"name":"Dugtrio","qty":3,"tier":3},{"name":"Meowth","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-02","designs":[{"name":"Persian","qty":3,"tier":3},{"name":"Golduck","qty":3,"tier":3},{"name":"Mankey","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-03","designs":[{"name":"Primeape","qty":3,"tier":3},{"name":"Growlithe","qty":3,"tier":3},{"name":"Poliwag","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-05","designs":[{"name":"Poliwhirl","qty":3,"tier":3},{"name":"Poliwrath","qty":3,"tier":3},{"name":"Abra","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-06","designs":[{"name":"Kadabra","qty":3,"tier":3},{"name":"Machop","qty":3,"tier":3},{"name":"Bellsprout","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-07","designs":[{"name":"Weepinbell","qty":3,"tier":3},{"name":"Victreebel","qty":3,"tier":3},{"name":"Tentacool","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-08","designs":[{"name":"Tentacruel","qty":3,"tier":3},{"name":"Geodude","qty":3,"tier":3},{"name":"Graveler","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-09","designs":[{"name":"Golem","qty":3,"tier":3},{"name":"Slowpoke","qty":3,"tier":3},{"name":"Slowbro","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-10","designs":[{"name":"Magnemite","qty":3,"tier":3},{"name":"Magneton","qty":3,"tier":3},{"name":"Grimer","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-12","designs":[{"name":"Shellder","qty":3,"tier":3},{"name":"Cloyster","qty":3,"tier":3},{"name":"Onix","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-13","designs":[{"name":"Krabby","qty":3,"tier":3},{"name":"Kingler","qty":3,"tier":3},{"name":"Voltorb","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-14","designs":[{"name":"Electrode","qty":3,"tier":3},{"name":"Exeggcute","qty":3,"tier":3},{"name":"Exeggutor","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-15","designs":[{"name":"Koffing","qty":3,"tier":3},{"name":"Weezing","qty":3,"tier":3},{"name":"Chansey","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-16","designs":[{"name":"Kangaskhan","qty":3,"tier":3},{"name":"Horsea","qty":3,"tier":3},{"name":"Seadra","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-17","designs":[{"name":"Goldeen","qty":3,"tier":3},{"name":"Seaking","qty":3,"tier":3},{"name":"Staryu","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-19","designs":[{"name":"Starmie","qty":3,"tier":3},{"name":"Mr. Mime","qty":3,"tier":3},{"name":"Scyther","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-20","designs":[{"name":"Electabuzz","qty":3,"tier":3},{"name":"Magmar","qty":3,"tier":3},{"name":"Pinsir","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-21","designs":[{"name":"Tauros","qty":3,"tier":3},{"name":"Porygon","qty":3,"tier":3},{"name":"Aerodactyl","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-22","designs":[{"name":"Chikorita","qty":3,"tier":3},{"name":"Cyndaquil","qty":3,"tier":3},{"name":"Totodile","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-23","designs":[{"name":"Togepi","qty":3,"tier":3},{"name":"Wooper","qty":3,"tier":3},{"name":"Houndour","qty":3,"tier":3}],"total_balls":9},{"date":"2026-10-24","designs":[{"name":"Houndoom","qty":3,"tier":3},{"name":"Trubbish","qty":3,"tier":3}],"total_balls":6}];
+
+const TOTAL_BALLS = 996;
+const TOTAL_DAYS = 111;
+
+// State
+let SCH = [];
+// PC: {date|name|ballIdx: bool} — individual ball print checks
+// AC: {name|ballIdx: bool} — individual ball assembly checks
+let PC = {}, AC = {}, cf = 'all', af = 'all';
+let pendingEod = null;
+let expandedDays = new Set();
+
+function nextPrintDay(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  while(true) {
+    const s = d.toISOString().slice(0,10);
+    if(d.getDay() !== 0 && !(s >= '2026-06-20' && s <= '2026-06-29')) return s;
+    d.setDate(d.getDate() + 1);
+  }
+}
+
+function ballKey(date, name, idx) { return date+'|'+name+'|'+idx; }
+function asmKey(name, idx) { return name+'|'+idx; }
+
+function printedCount(date, name, qty) {
+  let c = 0;
+  for(let i = 0; i < qty; i++) if(PC[ballKey(date, name, i)]) c++;
+  return c;
+}
+function totalPrintedForDesign(name) {
+  // sum across all days
+  let c = 0;
+  SCH.forEach(day => {
+    const d = day.designs.find(x => x.name === name);
+    if(d) c += printedCount(day.date, name, d.qty);
+  });
+  return c;
+}
+function assembledCount(name, total) {
+  let c = 0;
+  for(let i = 0; i < total; i++) if(AC[asmKey(name, i)]) c++;
+  return c;
+}
+
+function dayPrintedCount(date) {
+  const day = SCH.find(d => d.date === date);
+  if(!day) return 0;
+  return day.designs.reduce((s, d) => s + printedCount(date, d.name, d.qty), 0);
+}
+function isDayDone(date) {
+  const day = SCH.find(d => d.date === date);
+  if(!day) return false;
+  return dayPrintedCount(date) >= day.total_balls;
+}
+
+function updateStats() {
+  let totalPrinted = 0, doneDays = 0, totalAsm = 0;
+  // Build design totals
+  const designTotals = {};
+  SCH.forEach(day => {
+    if(isDayDone(day.date)) doneDays++;
+    day.designs.forEach(d => {
+      if(!designTotals[d.name]) designTotals[d.name] = 0;
+      designTotals[d.name] += d.qty;
+      totalPrinted += printedCount(day.date, d.name, d.qty);
+    });
+  });
+  Object.entries(designTotals).forEach(([name, qty]) => {
+    totalAsm += assembledCount(name, qty);
+  });
+  const inQueue = totalPrinted - totalAsm;
+  const pct = Math.round(totalPrinted / TOTAL_BALLS * 100);
+
+  document.getElementById('s-printed').textContent = totalPrinted;
+  document.getElementById('s-days').textContent = doneDays;
+  document.getElementById('s-queue').textContent = Math.max(0, inQueue);
+  document.getElementById('s-asm').textContent = totalAsm;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('pm-printed').textContent = totalPrinted;
+  document.getElementById('pm-asm').textContent = totalAsm;
+  const last = SCH[SCH.length - 1];
+  if(last) {
+    const fd = new Date(last.date + 'T12:00:00');
+    document.getElementById('pm-finish').textContent = fd.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem('mf4_pc', JSON.stringify(PC));
+    localStorage.setItem('mf4_ac', JSON.stringify(AC));
+    localStorage.setItem('mf4_sch', JSON.stringify(SCH));
+  } catch(e) {}
+}
+function load() {
+  try {
+    const pc = localStorage.getItem('mf4_pc');
+    const ac = localStorage.getItem('mf4_ac');
+    const sch = localStorage.getItem('mf4_sch');
+    if(pc) PC = JSON.parse(pc);
+    if(ac) AC = JSON.parse(ac);
+    SCH = sch ? JSON.parse(sch) : JSON.parse(JSON.stringify(BASE_SCH));
+  } catch(e) { SCH = JSON.parse(JSON.stringify(BASE_SCH)); }
+}
+
+function toggleBall(date, name, idx) {
+  const k = ballKey(date, name, idx);
+  PC[k] = !PC[k];
+  // If unchecking a printed ball, also uncheck assembly if checked
+  if(!PC[k]) {
+    // find the global ball index for this ball across all days
+    const ak = asmKey(name, globalBallIdx(date, name, idx));
+    if(AC[ak]) AC[ak] = false;
+  }
+  save(); updateStats(); renderCal();
+  // refresh asm if open
+  if(document.getElementById('panel-asm').classList.contains('on')) renderAsm();
+}
+
+function toggleDayAll(date) {
+  const day = SCH.find(d => d.date === date);
+  if(!day) return;
+  const allChecked = isDayDone(date);
+  day.designs.forEach(des => {
+    for(let i = 0; i < des.qty; i++) {
+      const k = ballKey(date, des.name, i);
+      if(allChecked) {
+        if(PC[k]) {
+          const gIdx = globalBallIdx(date, des.name, i);
+          delete AC[asmKey(des.name, gIdx)];
+        }
+        delete PC[k];
+      } else {
+        PC[k] = true;
+      }
+    }
+  });
+  save(); updateStats(); renderCal();
+  if(document.getElementById('panel-asm').classList.contains('on')) renderAsm();
+}
+
+function globalBallIdx(date, name, localIdx) {
+  // Ball idx in assembly is based on position across all days for this design
+  let count = 0;
+  for(const day of SCH) {
+    const d = day.designs.find(x => x.name === name);
+    if(d) {
+      if(day.date === date) return count + localIdx;
+      count += d.qty;
+    }
+  }
+  return localIdx;
+}
+
+function toggleAsm(name, ballIdx) {
+  const k = asmKey(name, ballIdx);
+  AC[k] = !AC[k];
+  save(); updateStats();
+  if(document.getElementById('panel-asm').classList.contains('on')) renderAsm();
+}
+
+// EOD
+function endOfDay() {
+  let targetDay = null;
+  for(let i = 0; i < SCH.length; i++) {
+    if(!isDayDone(SCH[i].date)) { targetDay = SCH[i]; break; }
+  }
+  if(!targetDay) { showEodStatus('All scheduled days complete! 🎉','ok'); return; }
+  const scheduled = targetDay.total_balls;
+  const completed = dayPrintedCount(targetDay.date);
+  const diff = completed - scheduled;
+  if(diff === 0) { showEodStatus('Day complete! Schedule is on track. 🎉','ok'); return; }
+  const behind = diff < 0;
+  const amt = Math.abs(diff);
+  document.getElementById('modal-title').textContent = behind ? `Behind by ${amt} ball${amt!==1?'s':''}` : `Ahead by ${amt} ball${amt!==1?'s':''}!`;
+  document.getElementById('modal-body').innerHTML = behind
+    ? `You printed <strong>${completed}</strong> of <strong>${scheduled}</strong> scheduled balls on ${fmtDate(targetDay.date)}.<div class="shift-detail">The ${amt} unfinished ball${amt!==1?'s':''} will carry to the next print day, and everything after shifts back by one day to keep the same daily load.</div>`
+    : `You printed <strong>${completed}</strong> balls on ${fmtDate(targetDay.date)} — <strong>${amt} ahead</strong> of that day's target.<div class="shift-detail">Those ${amt} extra ball${amt!==1?'s':''} will pull forward from the next day, moving the schedule up by one day.</div>`;
+  document.getElementById('modal-confirm').textContent = behind ? 'Shift Back' : 'Shift Forward';
+  pendingEod = { date: targetDay.date, completed, scheduled, diff };
+  document.getElementById('modal').classList.add('on');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('on'); pendingEod = null; }
+
+function confirmEod() {
+  if(!pendingEod) { closeModal(); return; }
+  const { date, completed, scheduled, diff } = pendingEod;
+  const dayIdx = SCH.findIndex(d => d.date === date);
+  if(dayIdx < 0) { closeModal(); return; }
+
+  if(diff < 0) {
+    // collect unchecked balls from current day
+    const currentDay = SCH[dayIdx];
+    const unchecked = [];
+    currentDay.designs.forEach(des => {
+      for(let i = 0; i < des.qty; i++) {
+        if(!PC[ballKey(date, des.name, i)]) unchecked.push({name: des.name, tier: des.tier});
+      }
+    });
+    // remove unchecked from current day designs
+    currentDay.designs = currentDay.designs.map(des => {
+      const kept = Array.from({length: des.qty}, (_,i) => PC[ballKey(date, des.name, i)] ? 1 : 0).filter(Boolean).length;
+      if(kept === 0) return null;
+      return {...des, qty: kept};
+    }).filter(Boolean);
+    currentDay.total_balls = currentDay.designs.reduce((s,d) => s+d.qty, 0);
+
+    // build new day from unchecked
+    const newDate = nextPrintDay(date);
+    const collapsed = {};
+    const order = [];
+    unchecked.forEach(b => {
+      if(!collapsed[b.name]) { collapsed[b.name] = {name:b.name, qty:0, tier:b.tier}; order.push(b.name); }
+      collapsed[b.name].qty++;
+    });
+    const newDay = {date: newDate, designs: order.map(n => collapsed[n]), total_balls: unchecked.length};
+
+    // re-key PC for moved balls (they're now on newDate)
+    // find global ball indices for unchecked balls and remap
+    // simplest: just leave them unkeyed on new date — they are unchecked by definition
+
+    const existNext = SCH.findIndex(d => d.date === newDate);
+    if(existNext >= 0) {
+      SCH[existNext].designs = [...newDay.designs, ...SCH[existNext].designs];
+      SCH[existNext].total_balls += newDay.total_balls;
+    } else {
+      SCH.splice(dayIdx+1, 0, newDay);
+    }
+    // shift everything from dayIdx+2 onward
+    for(let i = dayIdx+2; i < SCH.length; i++) SCH[i].date = nextPrintDay(SCH[i-1].date);
+
+  } else {
+    // ahead — pull forward from next day
+    if(dayIdx+1 < SCH.length) {
+      const nextDay = SCH[dayIdx+1];
+      let pulled = 0, pulledDesigns = [], remaining = [];
+      for(const des of nextDay.designs) {
+        if(pulled < diff) {
+          const take = Math.min(des.qty, diff - pulled);
+          if(take < des.qty) {
+            pulledDesigns.push({...des, qty: take});
+            remaining.push({...des, qty: des.qty - take});
+          } else {
+            pulledDesigns.push(des);
+          }
+          pulled += take;
+        } else remaining.push(des);
+      }
+      SCH[dayIdx].designs = [...SCH[dayIdx].designs, ...pulledDesigns];
+      SCH[dayIdx].total_balls += pulled;
+      if(remaining.length === 0) {
+        SCH.splice(dayIdx+1, 1);
+        for(let i = dayIdx+1; i < SCH.length; i++) SCH[i].date = nextPrintDay(SCH[i-1].date);
+      } else {
+        nextDay.designs = remaining;
+        nextDay.total_balls -= pulled;
+      }
+    }
+  }
+
+  save(); closeModal(); updateStats(); renderCal();
+  showEodStatus(diff < 0 ? `Shifted back — ${Math.abs(diff)} balls moved to next day.` : `Nice work! Pulled ${diff} balls forward.`, diff < 0 ? 'warn' : 'great');
+}
+
+function showEodStatus(msg, type) {
+  const el = document.getElementById('eod-status');
+  el.textContent = msg;
+  el.className = 'eod-status eod-' + type;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 6000);
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('panel-'+id).classList.add('on');
+  if(id === 'asm') renderAsm();
+}
+function setF(f, btn) {
+  cf = f;
+  document.querySelectorAll('#panel-print .filter-bar .fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderCal();
+}
+function setAF(f, btn) {
+  af = f;
+  document.querySelectorAll('#panel-asm .asm-controls .fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderAsm();
+}
+
+function fmtDate(iso) {
+  return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+function fmtMonth(iso) {
+  return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+}
+
+function renderCal() {
+  const cal = document.getElementById('cal');
+  let h = '', lm = '', bShown = false;
+  SCH.forEach(day => {
+    const done = isDayDone(day.date);
+    const pc = dayPrintedCount(day.date);
+    const partial = pc > 0 && !done;
+    const hasT = t => day.designs.some(d => d.tier === t);
+    if(cf==='todo'&&done) return;
+    if(cf==='done'&&!done) return;
+    if(cf==='t1'&&!hasT(1)) return;
+    if(cf==='t2'&&!hasT(2)) return;
+    if(cf==='t3'&&!hasT(3)) return;
+    if(!bShown && day.date>='2026-06-20') {
+      h+=`<div class="blackout"><div class="blackout-icon">🌍</div><div><div class="blackout-title">World Cup Blackout: June 20–29</div><div class="blackout-sub">10 days off — schedule resumes June 30</div></div></div>`;
+      bShown=true;
+    }
+    const m = fmtMonth(day.date);
+    if(m!==lm){h+=`<div class="month-hd">${m}</div>`;lm=m;}
+    const allT1=day.designs.every(d=>d.tier===1),allT2=day.designs.every(d=>d.tier===2),allT3=day.designs.every(d=>d.tier===3);
+    const phC=allT1?'ph-t1':allT2?'ph-t2':allT3?'ph-t3':'ph-mx';
+    const phL=allT1?'Tier 1':allT2?'Tier 2':allT3?'Tier 3':'Mixed';
+    const progLabel = done
+      ? `<span class="day-progress full">✓ ${day.total_balls} balls</span>`
+      : partial ? `<span class="day-progress partial">${pc}/${day.total_balls}</span>`
+      : `<span class="day-progress">${day.total_balls} balls</span>`;
+
+    h+=`<div class="day-card${done?' done':''}${partial?' partial':''}${expandedDays.has(day.date)?' expanded':''}" id="dc-${day.date}">`;
+    h+=`<div class="day-hdr" onclick="toggleExpand('${day.date}')">`;
+    h+=`<div class="day-chk${done?' on':partial?' partial':''}" title="${done?'Uncheck all':'Mark all printed'}" onclick="event.stopPropagation();toggleDayAll('${day.date}')"></div>`;
+    h+=`<div class="day-expand">▼</div><div class="day-date">${fmtDate(day.date)}</div>`;
+    h+=`<span class="day-phase ${phC}">${phL}</span>${progLabel}</div>`;
+
+    // collapsed tags
+    h+=`<div class="day-tags">`;
+    day.designs.forEach(d=>{
+      const pc2=printedCount(day.date,d.name,d.qty);
+      const tc=d.tier===1?'dtag-t1':d.tier===2?'dtag-t2':'dtag-t3';
+      const isP=pc2>0&&pc2<d.qty;
+      h+=`<span class="dtag ${tc}${isP?' dtag-partial':''}">${d.name} <span class="qty">${isP?pc2+'/'+d.qty:d.qty}</span></span>`;
+    });
+    h+=`</div>`;
+
+    // expanded rows
+    h+=`<div class="design-rows">`;
+    day.designs.forEach(d=>{
+      const pc2=printedCount(day.date,d.name,d.qty);
+      const tc=d.tier===1?'dt1':d.tier===2?'dt2':'dt3';
+      const tl=d.tier===1?'T1':d.tier===2?'T2':'T3';
+      const allDone=pc2===d.qty;
+      const safe=d.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      h+=`<div class="design-row">`;
+      h+=`<div class="design-row-top">`;
+      h+=`<div class="design-name">${d.name}</div>`;
+      h+=`<span class="design-prog${allDone?' done':''}">${pc2}/${d.qty}</span>`;
+      h+=`<span class="design-tier-badge ${tc}">${tl}</span>`;
+      h+=`<div class="qty-adj"><button class="qty-btn" title="Remove a ball" onclick="event.stopPropagation();adjustQty('${day.date}','${safe}',-1)">−</button><button class="qty-btn" title="Add a ball" onclick="event.stopPropagation();adjustQty('${day.date}','${safe}',1)">+</button></div>`;
+      h+=`</div><div class="ball-row">`;
+      for(let i=0;i<d.qty;i++){
+        const checked=!!PC[ballKey(day.date,d.name,i)];
+        h+=`<div class="ball-chk${checked?' on':''}" title="Ball ${i+1}" onclick="event.stopPropagation();toggleBall('${day.date}','${safe}',${i})"></div>`;
+      }
+      h+=`</div></div>`;
+    });
+    h+=`</div></div>`;
+  });
+  cal.innerHTML = h || '<div style="padding:3rem;text-align:center;color:var(--txt3)">No days match this filter.</div>';
+}
+
+function adjustQty(date, name, delta) {
+  const day = SCH.find(d => d.date === date);
+  if(!day) return;
+  const idx = day.designs.findIndex(d => d.name === name);
+  if(idx < 0) return;
+  const des = day.designs[idx];
+  if(delta > 0) {
+    des.qty += 1;
+    day.total_balls += 1;
+  } else {
+    if(des.qty <= 0) return;
+    const lastIdx = des.qty - 1;
+    const wasChecked = !!PC[ballKey(date, name, lastIdx)];
+    if(wasChecked && !confirm(`Ball ${des.qty} of ${name} on this day is already marked printed. Remove it anyway?`)) return;
+    if(wasChecked) {
+      const gIdx = globalBallIdx(date, name, lastIdx);
+      delete AC[asmKey(name, gIdx)];
+    }
+    delete PC[ballKey(date, name, lastIdx)];
+    des.qty -= 1;
+    day.total_balls -= 1;
+    if(des.qty === 0) day.designs.splice(idx, 1);
+  }
+  save(); updateStats(); renderCal();
+  if(document.getElementById('panel-asm').classList.contains('on')) renderAsm();
+}
+
+function toggleExpand(date) {
+  if(expandedDays.has(date)) expandedDays.delete(date);
+  else expandedDays.add(date);
+  const el = document.getElementById('dc-'+date);
+  if(el) el.classList.toggle('expanded');
+}
+
+function renderAsm() {
+  // Build design map with totals and global ball indices
+  const designMap = {};
+  const designOrder = [];
+  SCH.forEach(day => {
+    day.designs.forEach(d => {
+      if(!designMap[d.name]) {
+        designMap[d.name] = {name:d.name, tier:d.tier, totalQty:0, printedQty:0, globalStart:0};
+        designOrder.push(d.name);
+      }
+      designMap[d.name].printedQty += printedCount(day.date, d.name, d.qty);
+      designMap[d.name].totalQty += d.qty;
+    });
+  });
+
+  // Only show designs that have at least 1 ball printed
+  const q = (document.getElementById('asm-q').value||'').toLowerCase();
+  const entries = designOrder.map(n => designMap[n]).filter(d => {
+    if(d.printedQty === 0) return false;
+    if(q && !d.name.toLowerCase().includes(q)) return false;
+    const asmDone = assembledCount(d.name, d.totalQty);
+    const ready = d.printedQty - asmDone;
+    const partial = asmDone > 0 && asmDone < d.printedQty;
+    const allDone = asmDone >= d.printedQty;
+    if(af==='ready' && (ready===0||allDone)) return false;
+    if(af==='partial' && !partial) return false;
+    if(af==='done' && !allDone) return false;
+    if(af==='t1' && d.tier!==1) return false;
+    if(af==='t2' && d.tier!==2) return false;
+    return true;
+  });
+
+  const totalInQueue = Object.values(designMap).reduce((s,d) => {
+    const asmD = assembledCount(d.name, d.totalQty);
+    return s + Math.max(0, d.printedQty - asmD);
+  }, 0);
+  document.getElementById('asm-meta').innerHTML = `<strong>${totalInQueue}</strong> ball${totalInQueue!==1?'s':''} ready to assemble &nbsp;·&nbsp; showing <strong>${entries.length}</strong> design${entries.length!==1?'s':''}`;
+
+  let h = '';
+  entries.forEach(d => {
+    const asmDone = assembledCount(d.name, d.totalQty);
+    const allDone = asmDone >= d.printedQty;
+    const tc = d.tier===1?'at1':d.tier===2?'at2':'at3';
+    const tl = d.tier===1?'T1':d.tier===2?'T2':'T3';
+    const safe = d.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    h+=`<div class="asm-card${allDone?' asm-all-done':''}">`;
+    h+=`<div class="asm-card-top">`;
+    h+=`<div class="asm-name" title="${d.name}">${d.name}</div>`;
+    h+=`<span class="asm-prog${allDone?' done':''}">${asmDone}/${d.printedQty}</span>`;
+    h+=`<span class="asm-tier ${tc}">${tl}</span>`;
+    h+=`</div><div class="asm-balls">`;
+    // Show one circle per printed ball — locked if not yet printed
+    for(let i=0;i<d.totalQty;i++){
+      const isPrinted = i < d.printedQty;
+      const isAsmd = !!AC[asmKey(d.name,i)];
+      if(!isPrinted){
+        h+=`<div class="asm-ball locked" title="Not yet printed"></div>`;
+      } else {
+        h+=`<div class="asm-ball${isAsmd?' on':''}" title="${isAsmd?'Assembled':'Mark assembled'}" onclick="toggleAsm('${safe}',${i})"></div>`;
+      }
+    }
+    h+=`</div></div>`;
+  });
+
+  document.getElementById('asm-grid').innerHTML = h || '<div class="asm-empty">No designs match — print some balls first!</div>';
+}
+
+load();
+updateStats();
+renderCal();
+</script>
+</body>
+</html>
